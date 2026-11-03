@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Comment Me",
   "short_name": "Comment Me",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Lis une publication Facebook ou LinkedIn et te propose des commentaires dans ton propre style. Rien n'est publié sans toi.",
   "icons": {
     "16": "icons/icon16.png",

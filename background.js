@@ -201,7 +201,33 @@ async function fetchImage(url) {
 
 // ---------- Appels API (en flux) ----------
 
+// Modèles de secours quand le modèle choisi est surchargé (erreurs 5xx).
+const FALLBACK_MODELS = {
+  gemini: ["gemini-flash-lite-latest", "gemini-2.5-flash"],
+  groq: ["llama-3.1-8b-instant"],
+  openrouter: ["deepseek/deepseek-chat-v3-0324:free"]
+};
+
 async function streamAI(s, system, user, images = [], onText = () => {}) {
+  const chosen = (s.models[s.provider] || "").trim() || CM_PROVIDERS[s.provider]?.model;
+  const models = [chosen, chosen, ...(FALLBACK_MODELS[s.provider] || []).filter((m) => m !== chosen)];
+  let last;
+  for (let i = 0; i < models.length; i++) {
+    let wrote = false;
+    try {
+      const sm = { ...s, models: { ...s.models, [s.provider]: models[i] } };
+      return await streamOnce(sm, system, user, images, (t) => ((wrote = true), onText(t)));
+    } catch (e) {
+      last = e;
+      // On ne réessaie que si le serveur est surchargé et que rien n'a encore été affiché.
+      if (wrote || !(e.status >= 500 && e.status < 600)) throw e;
+      await new Promise((r) => setTimeout(r, i === 0 ? 1200 : 400));
+    }
+  }
+  throw last;
+}
+
+async function streamOnce(s, system, user, images = [], onText = () => {}) {
   const p = CM_PROVIDERS[s.provider] || CM_PROVIDERS.gemini;
   const key = (s.keys[s.provider] || "").trim();
   const model = (s.models[s.provider] || "").trim() || p.model;
@@ -304,6 +330,7 @@ async function sse(url, headers, body, onData) {
     } catch {}
     const err = (m) => Object.assign(new Error(m), { status: r.status });
     if (r.status === 401 || r.status === 403) throw err(`Clé API refusée (${r.status}). Vérifie-la dans les réglages.`);
+    if (r.status >= 500) throw err("Le modèle d'IA est surchargé en ce moment (erreur " + r.status + "). Réessaie dans une minute, ou choisis Groq dans les réglages.");
     if (r.status === 429) throw err("Limite gratuite atteinte pour le moment. Réessaie dans un instant ou change de fournisseur.");
     throw err(`Erreur API ${r.status} : ${String(detail).slice(0, 300)}`);
   }
