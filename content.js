@@ -97,6 +97,29 @@
     });
   }
 
+  // Résumé en flux (pas de cache : on ne le demande que sur clic).
+  function streamSummary(req, onUpdate) {
+    let port;
+    try {
+      port = chrome.runtime.connect({ name: "cm-stream" });
+    } catch {
+      onUpdate({ error: "L'extension a été mise à jour : recharge la page (F5).", done: true });
+      return () => {};
+    }
+    let finished = false;
+    port.onMessage.addListener((m) => {
+      if (m.type !== "delta") finished = true;
+      onUpdate({ text: m.text, error: m.error, done: finished });
+      if (finished) port.disconnect();
+    });
+    port.onDisconnect.addListener(() => !finished && onUpdate({ error: "Connexion interrompue. Réessaie.", done: true }));
+    port.postMessage({ platform: PLATFORM, ...req, mode: "summary" });
+    return () => {
+      finished = true;
+      try { port.disconnect(); } catch {}
+    };
+  }
+
   function reqFrom(ctx, intent = "auto", extra = "") {
     const { post = "", author = "", comment = "", commentAuthor = "", images = [], source } = ctx;
     return { post: post.trim(), author, comment, commentAuthor, images, intent, extra, source };
@@ -546,6 +569,12 @@
     @keyframes sh { to { background-position: -200% 0; } }
     .err { background: #fff1f0; border: 1px solid #ffccc7; color: #a8071a; border-radius: 8px; padding: 8px; font-size: 13px; }
     .err a { color: #a8071a; font-weight: 600; cursor: pointer; text-decoration: underline; }
+    .top { display: flex; gap: 6px; align-items: flex-start; }
+    .top details { flex: 1; min-width: 0; }
+    .sumbtn { border: 1px solid #d0d7de; background: #fff; border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 600; cursor: pointer; color: #1d2129; white-space: nowrap; }
+    .sumbtn:hover { border-color: #4f46e5; color: #3730a3; }
+    .sum { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 8px 10px; font-size: 13px; line-height: 1.45; white-space: pre-wrap; color: #1d2129; }
+    .sum:empty { display: none; }
     .note { font-size: 11px; color: #8b949e; text-align: center; }
   `;
 
@@ -587,10 +616,14 @@
     const summary = post ? `${author ? author + " : " : ""}${firstLine.slice(0, 70)}` : "";
     const root = makeShell(`
           ${comment ? `<div class="reply">↪ Réponse à ${escapeHTML(commentAuthor || "un commentaire")} : ${escapeHTML(comment.slice(0, 200))}</div>` : ""}
-          <details ${post ? "" : "open"}>
-            <summary>${post ? "📄 " + escapeHTML(summary) : "📄 Texte de la publication"}</summary>
-            <textarea class="post" placeholder="Sélectionne ou colle le texte de la publication…"></textarea>
-          </details>
+          <div class="top">
+            <details ${post ? "" : "open"}>
+              <summary>${post ? "📄 " + escapeHTML(summary) : "📄 Texte de la publication"}</summary>
+              <textarea class="post" placeholder="Sélectionne ou colle le texte de la publication…"></textarea>
+            </details>
+            <button class="sumbtn" title="Résumer la publication">📝 Résumer</button>
+          </div>
+          <div class="sum"></div>
           <div class="chips">${INTENTS.map(([v, l], i) => `<button class="chip${i ? "" : " on"}" data-v="${escapeHTML(v)}">${l}</button>`).join("")}</div>
           <input class="extra" placeholder="Consigne en plus (optionnel), puis Entrée">
           <button class="go">Proposer des commentaires</button>
@@ -610,6 +643,18 @@
       })
     );
     $(".extra").addEventListener("keydown", (e) => e.key === "Enter" && run());
+    let stopSummary = null;
+    $(".sumbtn").addEventListener("click", () => {
+      const text = $(".post").value.trim();
+      if (!text) return void ($("details").open = true);
+      stopSummary?.();
+      const box = $(".sum");
+      box.textContent = "Résumé en cours…";
+      stopSummary = streamSummary({ ...reqFrom(ctx), post: text }, ({ text: t, error }) => {
+        if (error) box.textContent = "⚠ " + error;
+        else if (t) box.textContent = t;
+      });
+    });
     $(".go").addEventListener("click", () => run(generated));
     let generated = false;
     let detach = null;
@@ -644,7 +689,7 @@
       });
     }
 
-    panel.cleanup = () => detach?.();
+    panel.cleanup = () => (detach?.(), stopSummary?.());
 
     if (post) run();
     else $(".post").focus();

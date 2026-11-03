@@ -13,6 +13,7 @@ Tu utilises **ta propre clé API** : aucun serveur intermédiaire, aucun abonnem
 - **Lecture automatique** de la publication et du commentaire auquel tu réponds, sans copier-coller (clique sur « Voir plus » si besoin).
 - **Reconnaît quand c'est toi qui es tagué.**
 - **Mode Notifications** : sur ta page de notifications, le bouton « ✨ Répondre aux tags » prépare une réponse pour chaque mention.
+- **📝 Résumer** une longue publication en 10 secondes : l'essentiel, les points clés et ce qu'on attend de toi.
 - **Lecture des images** des publications (avec Gemini, OpenAI, Claude ou un modèle « vision »).
 - **Apprentissage de ton style** à partir de tes exemples, d'une analyse automatique et des commentaires que tu publies vraiment.
 - Tons au choix : court, chaleureux, pro, drôle, merci, bravo, question.
@@ -35,19 +36,24 @@ Tu utilises **ta propre clé API** : aucun serveur intermédiaire, aucun abonnem
 
 > Sur les offres gratuites, certains fournisseurs (dont Google) peuvent utiliser les requêtes pour améliorer leurs modèles. Pour une confidentialité totale, utilise Ollama en local.
 
-## Installation (mode développeur)
+## Installation
+
+> Bientôt dans le Chrome Web Store, Edge Add-ons et Firefox Add-ons (installation en un clic). En attendant :
 
 Compatible avec **Chrome, Edge, Brave, Opera, Vivaldi** et tous les navigateurs basés sur Chromium.
 
-1. Télécharge ou clone ce dépôt.
-2. Ouvre la page des extensions :
+1. Va sur la page **[Releases](https://github.com/rogerfarolix/comment-me/releases/latest)** et télécharge `comment-me-vX.Y.Z.zip`.
+2. **Décompresse** le zip dans un dossier que tu ne supprimeras pas.
+3. Ouvre la page des extensions :
    - Chrome : `chrome://extensions`
    - Edge : `edge://extensions`
    - Brave : `brave://extensions`
    - Opera : `opera://extensions`
-3. Active le **Mode développeur**.
-4. Clique sur **Charger l'extension non empaquetée** et choisis ce dossier.
-5. La page de réglages s'ouvre : choisis ton IA, colle ta clé et ajoute des exemples de tes commentaires.
+4. Active le **Mode développeur**.
+5. Clique sur **Charger l'extension non empaquetée** et choisis le dossier décompressé.
+6. La page de réglages s'ouvre : choisis ton IA, colle ta clé et ajoute des exemples de tes commentaires.
+
+**Mise à jour :** télécharge le nouveau zip, remplace le contenu du dossier, puis clique sur ↻ dans la page des extensions.
 
 ### Firefox (128 ou plus récent)
 
@@ -58,6 +64,8 @@ Compatible avec **Chrome, Edge, Brave, Opera, Vivaldi** et tous les navigateurs 
 Pour une installation permanente, il faudra passer par la version publiée sur addons.mozilla.org.
 
 ## Pour les développeurs
+
+Publier une version : mets à jour `version` dans `manifest.json`, puis `git tag vX.Y.Z && git push --tags`. GitHub Actions crée la release et le zip.
 
 ```bash
 npm run lint     # vérification Mozilla (web-ext)
