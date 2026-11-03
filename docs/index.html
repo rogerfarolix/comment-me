@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Comment Me : réponds à tout le monde, dans ton style</title>
+  <meta name="description" content="Extension gratuite et open source : lis une publication Facebook ou LinkedIn et reçois des commentaires écrits dans ton style. Tu publies toi-même.">
+  <meta property="og:title" content="Comment Me : réponds à tout le monde, dans ton style">
+  <meta property="og:description" content="Extension gratuite et open source pour Facebook et LinkedIn. Ta propre IA, gratuite possible. Rien n'est publié sans toi.">
+  <meta property="og:image" content="https://rogerfarolix.github.io/comment-me/img/reply.png">
+  <link rel="icon" href="img/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #15131f; --muted: #5b5870; --bg: #fbfaf7; --card: #fff; --line: #ebe8f2;
+      --violet: #6d4af0; --indigo: #4338ca; --sun: #f59e0b; --pink: #ec4899;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 Inter, system-ui, sans-serif; }
+    a { color: inherit; }
+    h1, h2, h3 { font-family: "Bricolage Grotesque", Inter, sans-serif; line-height: 1.08; margin: 0; letter-spacing: -.02em; }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+    nav { display: flex; align-items: center; justify-content: space-between; padding: 22px 0; }
+    .brand { display: flex; align-items: center; gap: 10px; font: 800 20px "Bricolage Grotesque", sans-serif; text-decoration: none; }
+    .brand img { width: 34px; height: 34px; }
+    nav .links { display: flex; gap: 22px; align-items: center; font-size: 15px; font-weight: 500; }
+    nav .links a { text-decoration: none; color: var(--muted); }
+    nav .links a:hover { color: var(--ink); }
+
+    .btn { display: inline-flex; align-items: center; gap: 10px; padding: 14px 24px; border-radius: 14px; font-weight: 600; text-decoration: none; transition: transform .15s, box-shadow .15s; }
+    .btn:hover { transform: translateY(-2px); }
+    .btn.primary { background: linear-gradient(135deg, var(--violet), var(--indigo)); color: #fff; box-shadow: 0 10px 30px -8px rgba(79,70,229,.6); }
+    .btn.ghost { background: #fff; border: 1px solid var(--line); }
+    .btn.small { padding: 9px 16px; font-size: 14px; border-radius: 10px; }
+
+    .hero { display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: center; padding: 56px 0 80px; }
+    .pill { display: inline-flex; gap: 8px; align-items: center; background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-size: 14px; color: var(--muted); margin-bottom: 22px; }
+    .pill b { color: #16a34a; }
+    .hero h1 { font-size: clamp(42px, 6vw, 72px); font-weight: 800; }
+    .hero h1 em { font-style: normal; background: linear-gradient(120deg, var(--sun), var(--pink) 60%, var(--violet)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .hero p.lead { font-size: 20px; color: var(--muted); margin: 22px 0 32px; max-width: 34em; }
+    .cta { display: flex; gap: 12px; flex-wrap: wrap; }
+    .browsers { margin-top: 22px; font-size: 14px; color: var(--muted); }
+    .shot { position: relative; }
+    .shot img { width: 100%; border-radius: 18px; border: 1px solid var(--line); box-shadow: 0 30px 80px -30px rgba(40,20,120,.35); display: block; }
+    .shot::before { content: ""; position: absolute; inset: -30px -20px auto auto; width: 180px; height: 180px; background: radial-gradient(circle, rgba(245,158,11,.35), transparent 70%); z-index: -1; }
+
+    section { padding: 80px 0; }
+    .kicker { color: var(--violet); font-weight: 600; font-size: 14px; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 12px; }
+    h2 { font-size: clamp(32px, 4vw, 48px); font-weight: 800; max-width: 18em; }
+
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 44px; }
+    .step { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 28px; }
+    .step .n { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: #f1edff; color: var(--violet); font: 800 18px "Bricolage Grotesque"; margin-bottom: 18px; }
+    .step h3 { font-size: 22px; margin-bottom: 8px; }
+    .step p { margin: 0; color: var(--muted); }
+
+    .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 44px; }
+    .f { padding: 24px; border-radius: 18px; background: var(--card); border: 1px solid var(--line); }
+    .f .ico { font-size: 26px; }
+    .f h3 { font-size: 19px; margin: 12px 0 6px; }
+    .f p { margin: 0; color: var(--muted); font-size: 15.5px; }
+
+    .show { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; margin-top: 56px; }
+    .show.rev > :first-child { order: 2; }
+    .show img { width: 100%; border-radius: 16px; border: 1px solid var(--line); box-shadow: 0 20px 60px -30px rgba(40,20,120,.35); }
+    .show h3 { font-size: 30px; margin-bottom: 12px; }
+    .show p { color: var(--muted); margin: 0; }
+
+    .dark { background: var(--ink); color: #f4f2fb; border-radius: 32px; padding: 64px; }
+    .dark .kicker { color: #c4b5fd; }
+    .ai { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 36px; }
+    .ai div { border: 1px solid rgba(255,255,255,.12); border-radius: 14px; padding: 16px; font-weight: 600; }
+    .ai span { display: block; font-weight: 400; font-size: 14px; color: #a9a5bf; margin-top: 4px; }
+    .ai .free span { color: #86efac; }
+
+    .install { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 40px; }
+    .box { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 30px; }
+    .box h3 { font-size: 22px; margin-bottom: 14px; }
+    .box ol { margin: 0; padding-left: 20px; color: var(--muted); }
+    .box li { margin: 6px 0; }
+    code { background: #f1edff; color: var(--indigo); padding: 2px 7px; border-radius: 6px; font-size: .9em; }
+    .soon { display: inline-block; font-size: 12px; font-weight: 600; background: #fef3c7; color: #92400e; border-radius: 999px; padding: 3px 10px; margin-left: 8px; vertical-align: middle; }
+
+    .promise { text-align: center; }
+    .promise h2 { margin: 0 auto; }
+    .promise p { color: var(--muted); max-width: 36em; margin: 18px auto 32px; }
+
+    footer { border-top: 1px solid var(--line); padding: 32px 0 48px; color: var(--muted); font-size: 14px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+    @media (max-width: 860px) {
+      .hero, .show, .install { grid-template-columns: 1fr; }
+      .show.rev > :first-child { order: 0; }
+      .steps, .features { grid-template-columns: 1fr; }
+      .ai { grid-template-columns: 1fr 1fr; }
+      .dark { padding: 36px 24px; border-radius: 24px; }
+      nav .links a:not(.btn) { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav>
+      <a class="brand" href="#"><img src="img/logo.svg" alt="">Comment Me</a>
+      <div class="links">
+        <a href="#fonctionnalites">Fonctionnalités</a>
+        <a href="#installation">Installation</a>
+        <a href="https://github.com/rogerfarolix/comment-me">GitHub</a>
+        <a class="btn primary small" href="https://github.com/rogerfarolix/comment-me/releases/latest">Télécharger</a>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <div>
+        <div class="pill"><b>●</b> Gratuit · Open source · Ta propre IA</div>
+        <h1>Tagué partout ?<br>Réponds à tout le monde, <em>dans ton style.</em></h1>
+        <p class="lead">Comment Me lit la publication Facebook ou LinkedIn et te propose des commentaires qui te ressemblent. Tu choisis, tu ajustes, <strong>et c'est toi qui publies.</strong></p>
+        <div class="cta">
+          <a class="btn primary" href="https://github.com/rogerfarolix/comment-me/releases/latest">⬇ Télécharger l'extension</a>
+          <a class="btn ghost" href="#installation">Comment l'installer</a>
+        </div>
+        <p class="browsers">Chrome · Edge · Brave · Opera · Vivaldi · Firefox</p>
+      </div>
+      <div class="shot"><img src="img/reply.png" alt="Fenêtre Comment Me proposant deux réponses à un commentaire Facebook"></div>
+    </header>
+  </div>
+
+  <section>
+    <div class="wrap">
+      <div class="kicker">Comment ça marche</div>
+      <h2>Trois clics, et ta réponse est prête.</h2>
+      <div class="steps">
+        <div class="step"><div class="n">1</div><h3>Clique dans le commentaire</h3><p>Un ✨ apparaît. L'IA a déjà lu la publication et commence à rédiger.</p></div>
+        <div class="step"><div class="n">2</div><h3>Choisis ta réponse</h3><p>Plusieurs propositions dans ton ton : courte, chaleureuse, pro, drôle… Modifie si tu veux.</p></div>
+        <div class="step"><div class="n">3</div><h3>Publie toi-même</h3><p>« Insérer » remplit la zone de commentaire. Le bouton « Publier », c'est toi qui le cliques.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="fonctionnalites">
+    <div class="wrap">
+      <div class="kicker">Fonctionnalités</div>
+      <h2>Pensé pour ceux qui sont sollicités toute la journée.</h2>
+      <div class="features">
+        <div class="f"><div class="ico">🗣️</div><h3>Ton style, pas celui d'un robot</h3><p>Donne quelques-uns de tes commentaires : l'IA reprend tes expressions, tes emojis, ton tutoiement. Elle apprend aussi de ce que tu publies.</p></div>
+        <div class="f"><div class="ico">⚡</div><h3>Prêt avant que tu demandes</h3><p>Les propositions se préparent dès que tu cliques dans la zone de commentaire, et le texte s'écrit sous tes yeux.</p></div>
+        <div class="f"><div class="ico">🏷️</div><h3>Répond aux tags</h3><p>L'extension comprend à quel commentaire tu réponds, et qui t'a mentionné.</p></div>
+        <div class="f"><div class="ico">🔔</div><h3>Toutes tes notifications d'un coup</h3><p>Sur ta page Notifications, « Répondre aux tags » prépare une réponse pour chaque mention.</p></div>
+        <div class="f"><div class="ico">📝</div><h3>Résumé en 10 secondes</h3><p>Une longue publication ? L'essentiel, les points clés, et ce qu'on attend de toi.</p></div>
+        <div class="f"><div class="ico">🖼️</div><h3>Lit aussi les images</h3><p>Une photo sans texte ? L'IA la regarde pour écrire un commentaire pertinent.</p></div>
+      </div>
+
+      <div class="show">
+        <div><img src="img/summary.png" alt="Résumé d'une longue publication LinkedIn" loading="lazy"></div>
+        <div><h3>Comprends vite, réponds juste.</h3><p>Le bouton 📝 Résumer condense une longue publication en quelques lignes, et repère quand on attend quelque chose de toi : une recommandation, une réponse, un avis.</p></div>
+      </div>
+      <div class="show rev">
+        <div><img src="img/notifications.png" alt="Mode notifications : une réponse préparée par mention" loading="lazy"></div>
+        <div><h3>Vingt tags ce matin ? Aucun problème.</h3><p>Ouvre tes notifications et clique sur « ✨ Répondre aux tags ». Chaque mention reçoit une réponse prête. Copie, ouvre, publie.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="dark">
+        <div class="kicker">Ta propre IA</div>
+        <h2>Gratuit pour commencer. Ta clé, tes règles.</h2>
+        <p style="color:#a9a5bf;max-width:40em">Pas d'abonnement Comment Me, pas de serveur intermédiaire. Tu branches ta propre clé API, et plusieurs fournisseurs ont une offre gratuite.</p>
+        <div class="ai">
+          <div class="free">Google Gemini<span>Gratuit</span></div>
+          <div class="free">Groq<span>Gratuit, ultra rapide</span></div>
+          <div class="free">Mistral AI<span>Gratuit (Experiment)</span></div>
+          <div class="free">OpenRouter<span>Modèles gratuits</span></div>
+          <div class="free">Ollama<span>Gratuit, 100 % local</span></div>
+          <div>OpenAI<span>Payant</span></div>
+          <div>Anthropic Claude<span>Payant</span></div>
+          <div>Toute API compatible<span>Au choix</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="installation">
+    <div class="wrap">
+      <div class="kicker">Installation</div>
+      <h2>Installe-le en deux minutes.</h2>
+      <div class="install">
+        <div class="box">
+          <h3>Chrome, Edge, Brave, Opera</h3>
+          <ol>
+            <li><a href="https://github.com/rogerfarolix/comment-me/releases/latest">Télécharge le zip</a> de la dernière version et décompresse-le.</li>
+            <li>Ouvre <code>chrome://extensions</code> (ou <code>edge://</code>, <code>brave://</code>, <code>opera://</code>).</li>
+            <li>Active le <strong>Mode développeur</strong>.</li>
+            <li>Clique sur <strong>Charger l'extension non empaquetée</strong> et choisis le dossier.</li>
+            <li>Colle ta clé gratuite (<a href="https://aistudio.google.com/apikey">Google AI Studio</a>) et quelques-uns de tes commentaires.</li>
+          </ol>
+        </div>
+        <div class="box">
+          <h3>Firefox</h3>
+          <ol>
+            <li>Télécharge et décompresse le zip.</li>
+            <li>Ouvre <code>about:debugging#/runtime/this-firefox</code>.</li>
+            <li>Clique sur <strong>Charger un module temporaire</strong> et choisis <code>manifest.json</code>.</li>
+          </ol>
+          <h3 style="margin-top:26px">Boutiques officielles <span class="soon">Bientôt</span></h3>
+          <p style="color:var(--muted);margin:0">Chrome Web Store, Edge Add-ons et Firefox Add-ons : installation en un clic et mises à jour automatiques.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="promise">
+    <div class="wrap">
+      <div class="kicker">Notre promesse</div>
+      <h2>Rien n'est publié sans toi.</h2>
+      <p>Comment Me ne publie, n'aime et n'envoie jamais rien à ta place. Tes réglages et ta clé restent dans ton navigateur. Le code est ouvert : tout le monde peut le vérifier.</p>
+      <a class="btn primary" href="https://github.com/rogerfarolix/comment-me/releases/latest">⬇ Télécharger Comment Me</a>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <footer>
+      <span>© 2026 Comment Me · Licence MIT</span>
+      <span><a href="https://github.com/rogerfarolix/comment-me">GitHub</a> · <a href="https://github.com/rogerfarolix/comment-me/blob/main/PRIVACY.md">Confidentialité</a> · <a href="https://github.com/rogerfarolix/comment-me/issues">Signaler un problème</a></span>
+    </footer>
+  </div>
+</body>
+</html>

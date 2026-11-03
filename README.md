@@ -38,6 +38,8 @@ Tu utilises **ta propre clé API** : aucun serveur intermédiaire, aucun abonnem
 
 ## Installation
 
+> 🌐 Site : https://rogerfarolix.github.io/comment-me/
+
 > Bientôt dans le Chrome Web Store, Edge Add-ons et Firefox Add-ons (installation en un clic). En attendant :
 
 Compatible avec **Chrome, Edge, Brave, Opera, Vivaldi** et tous les navigateurs basés sur Chromium.
