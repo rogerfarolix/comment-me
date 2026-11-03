@@ -23,7 +23,7 @@
       post: '[aria-posinset], [data-pagelet^="FeedUnit"], [role="dialog"] [role="article"]:not([aria-label]), div[role="article"]:not([aria-label*="omment"])',
       comment: 'div[role="article"][aria-label*="omment"], div[role="article"][aria-label*="éponse"], div[role="article"][aria-label*="eply"]',
       text: ['div[data-ad-preview="message"]', 'div[data-ad-comet-preview="message"]', 'div[dir="auto"]'],
-      author: ["h2 strong", "h3 strong", "h4 strong", "h2 a", "h3 a", "strong"],
+      author: ["h2 strong", "h3 strong", "h4 strong", "h2 a", "h3 a", "strong", "b"],
       commentBtn: ["div[role='button'][aria-label*='omment']"]
     }
   };
@@ -152,18 +152,30 @@
     }, true);
   }
 
+  // Icônes (Lucide, licence ISC).
+  const svg = (d, size = 16, fill = false) =>
+    `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${fill ? "currentColor" : "none"}" stroke="${fill ? "none" : "currentColor"}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:block">${d}</svg>`;
+  const I = {
+    sparkles: '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>',
+    gear: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+    x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    doc: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+    reply: '<path d="M20 20v-7a4 4 0 0 0-4-4H4"/><path d="M9 14 4 9l5-5"/>',
+    bell: '<path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>'
+  };
+
   // ---------- Bouton ✨ dans la zone de commentaire ----------
 
   const fab = document.createElement("button");
   fab.type = "button";
-  fab.textContent = "✨";
+  fab.innerHTML = svg(I.sparkles, 15, true);
   fab.title = "Comment Me : proposer un commentaire (Alt+Maj+C)";
   fab.setAttribute("aria-label", "Proposer un commentaire");
   Object.assign(fab.style, {
     position: "fixed", zIndex: "2147483646", display: "none",
     width: "28px", height: "28px", borderRadius: "50%", border: "0", padding: "0",
-    background: "linear-gradient(135deg,#7c3aed,#4f46e5)", color: "#fff", cursor: "pointer",
-    fontSize: "14px", lineHeight: "28px", boxShadow: "0 2px 8px rgba(79,70,229,.45)"
+    background: "#4f46e5", color: "#fff", cursor: "pointer",
+    display: "none", placeItems: "center", boxShadow: "0 2px 8px rgba(79,70,229,.45)"
   });
   // mousedown + preventDefault : la zone de commentaire garde le focus.
   fab.addEventListener("mousedown", (e) => e.preventDefault());
@@ -179,7 +191,7 @@
     if (!r.width || r.bottom < 0 || r.top > innerHeight) return (fab.style.display = "none");
     fab.style.left = Math.max(4, r.left - 34) + "px";
     fab.style.top = r.top + Math.min(r.height, 40) / 2 - 14 + "px";
-    fab.style.display = "block";
+    fab.style.display = "grid";
   }
 
   function fabReady(ready) {
@@ -326,8 +338,10 @@
     ctx.author = authorOf(postEl);
     ctx.images = imagesOf(postEl);
     if (commentEl && commentEl !== postEl) {
-      ctx.comment = cleanText(commentEl, ed).slice(0, 1500);
       ctx.commentAuthor = authorOf(commentEl);
+      // Sans le nom de l'auteur ni ses initiales d'avatar.
+      ctx.comment = cleanText(commentEl, ed).split("\n")
+        .filter((l) => l !== ctx.commentAuthor && l.length > 3).join("\n").slice(0, 1500);
     }
     return ctx;
   }
@@ -375,13 +389,13 @@
     if (getComputedStyle(post).position === "static") post.style.position = "relative";
     const b = document.createElement("button");
     b.type = "button";
-    b.textContent = "✨";
+    b.innerHTML = svg(I.sparkles, 14, true);
     b.title = "Comment Me : proposer un commentaire";
     b.setAttribute("aria-label", "Proposer un commentaire");
     Object.assign(b.style, {
       position: "absolute", top: "8px", right: "88px", zIndex: "5",
       width: "28px", height: "28px", borderRadius: "50%", border: "1px solid #d0d7de",
-      background: "#fff", cursor: "pointer", fontSize: "14px", lineHeight: "1",
+      background: "#fff", color: "#4f46e5", cursor: "pointer", display: "grid", placeItems: "center",
       boxShadow: "0 1px 3px rgba(0,0,0,.15)", opacity: ".8", padding: "0"
     });
     b.addEventListener("click", async (e) => {
@@ -399,11 +413,11 @@
 
   const notifBtn = document.createElement("button");
   notifBtn.type = "button";
-  notifBtn.textContent = "✨ Répondre aux tags";
+  notifBtn.innerHTML = `${svg(I.sparkles, 15, true)}<span>Répondre aux tags</span>`;
   Object.assign(notifBtn.style, {
     position: "fixed", left: "20px", bottom: "20px", zIndex: "2147483646",
     padding: "10px 16px", border: "0", borderRadius: "999px", cursor: "pointer",
-    background: "linear-gradient(135deg,#7c3aed,#4f46e5)", color: "#fff",
+    background: "#4f46e5", color: "#fff", display: "flex", alignItems: "center", gap: "8px",
     font: "600 14px system-ui, sans-serif", boxShadow: "0 4px 14px rgba(79,70,229,.45)"
   });
   notifBtn.addEventListener("click", openNotifPanel);
@@ -542,13 +556,18 @@
     .wrap { position: fixed; right: 20px; bottom: 20px; width: 400px; max-height: calc(100vh - 40px);
       display: flex; flex-direction: column; background: #fff; color: #1d2129; border-radius: 14px;
       box-shadow: 0 12px 40px rgba(0,0,0,.25); z-index: 2147483647; font-size: 14px; overflow: hidden; }
-    header { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: linear-gradient(135deg,#7c3aed,#4f46e5); color: #fff; }
-    header b { flex: 1; font-size: 15px; }
-    header button { background: transparent; border: 0; color: #fff; font-size: 17px; cursor: pointer; padding: 2px 6px; border-radius: 6px; }
+    header { display: flex; align-items: center; gap: 8px; padding: 11px 12px 11px 14px; background: #17142a; color: #fff; }
+    header b { flex: 1; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+    header b svg { color: #a78bfa; }
+    header button { background: transparent; border: 0; color: #c9c6d9; cursor: pointer; padding: 6px; border-radius: 8px; }
+    header button:hover { color: #fff; }
     header button:hover { background: rgba(255,255,255,.18); }
     .body { padding: 12px 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
     details { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 10px; background: #fafafa; }
     summary { cursor: pointer; font-size: 12px; font-weight: 600; color: #57606a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ic { display: inline-flex; align-items: center; gap: 6px; vertical-align: middle; }
+    .reply { display: flex; gap: 6px; }
+    .reply svg { flex: none; margin-top: 2px; }
     details textarea { margin-top: 6px; }
     .reply { font-size: 12px; color: #3730a3; background: #eef2ff; border-radius: 8px; padding: 6px 10px; max-height: 70px; overflow: hidden; }
     textarea, input { width: 100%; border: 1px solid #d0d7de; border-radius: 8px; padding: 8px; font-size: 13px; color: #1d2129; background: #fff; resize: vertical; }
@@ -571,7 +590,7 @@
     .err a { color: #a8071a; font-weight: 600; cursor: pointer; text-decoration: underline; }
     .top { display: flex; gap: 6px; align-items: flex-start; }
     .top details { flex: 1; min-width: 0; }
-    .sumbtn { border: 1px solid #d0d7de; background: #fff; border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 600; cursor: pointer; color: #1d2129; white-space: nowrap; }
+    .sumbtn { display: flex; align-items: center; gap: 6px; border: 1px solid #d0d7de; background: #fff; border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 600; cursor: pointer; color: #1d2129; white-space: nowrap; }
     .sumbtn:hover { border-color: #4f46e5; color: #3730a3; }
     .sum { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 8px 10px; font-size: 13px; line-height: 1.45; white-space: pre-wrap; color: #1d2129; }
     .sum:empty { display: none; }
@@ -591,9 +610,9 @@
     root.innerHTML = `
       <style>${CSS}</style>
       <div class="wrap" role="dialog" aria-label="Comment Me">
-        <header><b>✨ Comment Me</b>
-          <button class="opt" title="Réglages">⚙</button>
-          <button class="x" title="Fermer (Échap)">✕</button></header>
+        <header><b>${svg(I.sparkles, 16, true)}Comment Me</b>
+          <button class="opt" title="Réglages" aria-label="Réglages">${svg(I.gear)}</button>
+          <button class="x" title="Fermer (Échap)" aria-label="Fermer">${svg(I.x)}</button></header>
         <div class="body">${bodyHTML}</div>
       </div>`;
     document.documentElement.appendChild(hostEl);
@@ -615,13 +634,13 @@
     const firstLine = post.split("\n").find((l) => l.length > 15 && l !== author) || post.split("\n")[0] || "";
     const summary = post ? `${author ? author + " : " : ""}${firstLine.slice(0, 70)}` : "";
     const root = makeShell(`
-          ${comment ? `<div class="reply">↪ Réponse à ${escapeHTML(commentAuthor || "un commentaire")} : ${escapeHTML(comment.slice(0, 200))}</div>` : ""}
+          ${comment ? `<div class="reply">${svg(I.reply, 14)}<span>Réponse à ${escapeHTML(commentAuthor || "un commentaire")} : ${escapeHTML(comment.slice(0, 200))}</span></div>` : ""}
           <div class="top">
             <details ${post ? "" : "open"}>
-              <summary>${post ? "📄 " + escapeHTML(summary) : "📄 Texte de la publication"}</summary>
+              <summary>${post ? escapeHTML(summary) : "Texte de la publication"}</summary>
               <textarea class="post" placeholder="Sélectionne ou colle le texte de la publication…"></textarea>
             </details>
-            <button class="sumbtn" title="Résumer la publication">📝 Résumer</button>
+            <button class="sumbtn" title="Résumer la publication">${svg(I.doc, 14)}Résumer</button>
           </div>
           <div class="sum"></div>
           <div class="chips">${INTENTS.map(([v, l], i) => `<button class="chip${i ? "" : " on"}" data-v="${escapeHTML(v)}">${l}</button>`).join("")}</div>
@@ -651,7 +670,7 @@
       const box = $(".sum");
       box.textContent = "Résumé en cours…";
       stopSummary = streamSummary({ ...reqFrom(ctx), post: text }, ({ text: t, error }) => {
-        if (error) box.textContent = "⚠ " + error;
+        if (error) box.textContent = error;
         else if (t) box.textContent = t;
       });
     });
@@ -684,7 +703,7 @@
         ],
         onDone: (j) => {
           go.disabled = false;
-          go.textContent = j.error ? "Réessayer" : "↻ Régénérer";
+          go.textContent = j.error ? "Réessayer" : "Régénérer";
         }
       });
     }
