@@ -27,6 +27,7 @@ function readForm() {
   s.count = parseInt($("count").value);
   s.styleExamples = $("examples").value;
   s.styleNotes = $("notes").value;
+  s.myName = $("myName").value.trim();
   s.showButtons = $("showButtons").checked;
 }
 
@@ -72,6 +73,7 @@ async function init() {
   $("count").value = String(s.count);
   $("examples").value = s.styleExamples;
   $("notes").value = s.styleNotes;
+  $("myName").value = s.myName;
   $("showButtons").checked = s.showButtons;
   fillProvider();
 

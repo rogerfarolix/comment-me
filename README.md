@@ -1,4 +1,6 @@
-# ✨ Comment Me
+<p align="center"><img src="icons/logo.svg" width="96" alt="Comment Me"></p>
+
+# Comment Me
 
 Extension de navigateur qui **lit une publication Facebook ou LinkedIn et te propose des commentaires écrits dans ton propre style**. Tu choisis, tu modifies si besoin, et **c'est toi qui publies** : l'extension ne publie jamais rien toute seule.
 
@@ -6,7 +8,9 @@ Tu utilises **ta propre clé API** : aucun serveur intermédiaire, aucun abonnem
 
 ## Fonctionnalités
 
-- Bouton ✨ sur chaque publication (et chaque commentaire) Facebook et LinkedIn
+- Bouton ✨ dans la zone de commentaire : la publication (et le commentaire auquel tu réponds) est lue automatiquement, sans copier-coller
+- Bouton ✨ sur chaque publication Facebook et LinkedIn
+- Reconnaît quand c'est toi qui es tagué
 - Clic droit sur un texte sélectionné → « Proposer un commentaire » (fonctionne sur **tous les sites**)
 - Raccourci clavier **Alt+Maj+C** sur la publication survolée
 - Plusieurs propositions avec des tons au choix : court, chaleureux, pro, drôle, remerciement, félicitations, question

@@ -77,7 +77,9 @@ const CM_DEFAULTS = {
   models: {},      // { provider: model } — vide = modèle par défaut
   baseUrls: {},    // { provider: url } — pour custom / ollama
   language: "auto",
-  count: 3,
+  count: 2,
+  myName: "",
+  v: 2,
   styleNotes: "",
   styleExamples: "",
   showButtons: true
@@ -85,5 +87,8 @@ const CM_DEFAULTS = {
 
 async function cmGetSettings() {
   const { cm_settings } = await chrome.storage.local.get("cm_settings");
-  return { ...CM_DEFAULTS, ...(cm_settings || {}) };
+  const saved = cm_settings || {};
+  // v2 : 2 propositions par défaut au lieu de 3.
+  if (saved.count && !saved.v) saved.count = 2;
+  return { ...CM_DEFAULTS, ...saved, v: 2 };
 }

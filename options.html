@@ -7,7 +7,7 @@
 </head>
 <body>
   <main>
-    <h1>✨ Comment Me</h1>
+    <h1><img src="icons/logo.svg" alt="" width="40" height="40"> Comment Me</h1>
     <p class="lead">Des propositions de commentaires dans <b>ton</b> style, sur Facebook et LinkedIn. Rien n'est jamais publié sans toi.</p>
 
     <section>
@@ -40,6 +40,10 @@
 
     <section>
       <h2>2. Ton style</h2>
+      <label for="myName">Ton prénom et nom (tel qu'il apparaît sur tes réseaux)</label>
+      <input id="myName" placeholder="Ex. : Roger Gnanih">
+      <p class="hint">Permet à l'IA de savoir quand c'est toi qui es tagué.</p>
+
       <label for="examples">Exemples de tes vrais commentaires</label>
       <textarea id="examples" rows="9" placeholder="Colle 10 à 20 commentaires que tu as écrits, séparés par une ligne vide.
 
@@ -70,7 +74,7 @@ Merci pour le partage, c'est exactement ce que je disais à l'équipe la semaine
         <div>
           <label for="count">Nombre de propositions</label>
           <select id="count">
-            <option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option>
+            <option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option>
           </select>
         </div>
       </div>
@@ -80,7 +84,8 @@ Merci pour le partage, c'est exactement ce que je disais à l'équipe la semaine
     <section class="howto">
       <h2>Comment l'utiliser</h2>
       <ul>
-        <li>Clique sur le <b>✨</b> en haut à droite d'une publication Facebook ou LinkedIn.</li>
+        <li>Clique dans la zone de commentaire : un <b>✨</b> apparaît à gauche. Clique dessus, l'extension lit toute seule la publication (et le commentaire auquel tu réponds).</li>
+        <li>Ou clique sur le <b>✨</b> en haut à droite d'une publication.</li>
         <li>Ou sélectionne un texte, puis <b>clic droit → Proposer un commentaire</b> (fonctionne sur tous les sites).</li>
         <li>Ou survole une publication et appuie sur <b>Alt+Maj+C</b>.</li>
         <li>Choisis une proposition, modifie-la si besoin, clique <b>Insérer</b>, puis publie toi-même.</li>
