@@ -1,0 +1,30 @@
+* { box-sizing: border-box; }
+body { margin: 0; background: #f4f5fb; color: #1d2129; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 720px; margin: 0 auto; padding: 32px 20px 100px; }
+h1 { margin: 0 0 4px; font-size: 28px; }
+.lead { margin: 0 0 24px; color: #57606a; }
+section { background: #fff; border-radius: 14px; padding: 20px 22px; margin-bottom: 18px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+h2 { margin: 0 0 14px; font-size: 18px; }
+label { display: block; font-weight: 600; font-size: 13px; margin: 14px 0 6px; }
+label:first-of-type { margin-top: 0; }
+input, select, textarea { width: 100%; padding: 9px 11px; border: 1px solid #d0d7de; border-radius: 8px; font: inherit; font-size: 14px; background: #fff; color: inherit; }
+textarea { resize: vertical; }
+input:focus, select:focus, textarea:focus { outline: 2px solid #a5b4fc; border-color: #4f46e5; }
+.inline { display: flex; gap: 8px; }
+.inline input { flex: 1; }
+.hint { margin: 6px 0 0; font-size: 13px; color: #57606a; }
+.hint a { color: #4f46e5; font-weight: 600; }
+button { font: inherit; font-size: 14px; border-radius: 8px; padding: 9px 16px; cursor: pointer; border: 1px solid #4f46e5; background: #4f46e5; color: #fff; font-weight: 600; }
+button.ghost { background: #fff; color: #4f46e5; margin-top: 14px; }
+.inline button.ghost { margin-top: 0; white-space: nowrap; }
+button:disabled { opacity: .6; cursor: wait; }
+.status { margin-left: 10px; font-size: 13px; }
+.status.ok { color: #1a7f37; }
+.status.ko { color: #cf222e; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid label { margin-top: 0; }
+label.check { display: flex; align-items: center; gap: 8px; font-weight: 500; margin-top: 16px; }
+label.check input { width: auto; }
+.howto ul { margin: 0; padding-left: 20px; }
+.howto li { margin: 4px 0; }
+.bar { position: fixed; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,.95); border-top: 1px solid #e5e7eb; padding: 12px; text-align: center; }

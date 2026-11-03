@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Comment Me : réglages</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main>
+    <h1>✨ Comment Me</h1>
+    <p class="lead">Des propositions de commentaires dans <b>ton</b> style, sur Facebook et LinkedIn. Rien n'est jamais publié sans toi.</p>
+
+    <section>
+      <h2>1. Ton IA</h2>
+      <label for="provider">Fournisseur</label>
+      <select id="provider"></select>
+      <p class="hint" id="hint"></p>
+
+      <div id="keyRow">
+        <label for="key">Clé API</label>
+        <div class="inline">
+          <input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="Colle ta clé ici">
+          <button type="button" id="toggleKey" class="ghost">Afficher</button>
+        </div>
+        <p class="hint">Stockée uniquement dans ce navigateur. Elle n'est envoyée qu'au fournisseur choisi. <a id="keyLink" target="_blank" rel="noopener">Obtenir une clé →</a></p>
+      </div>
+
+      <div id="urlRow">
+        <label for="baseUrl">URL de l'API</label>
+        <input id="baseUrl" spellcheck="false" placeholder="https://…/v1">
+      </div>
+
+      <label for="model">Modèle</label>
+      <input id="model" spellcheck="false">
+      <p class="hint">Laisse vide pour utiliser le modèle par défaut.</p>
+
+      <button type="button" id="test" class="ghost">Tester la connexion</button>
+      <span id="testResult" class="status"></span>
+    </section>
+
+    <section>
+      <h2>2. Ton style</h2>
+      <label for="examples">Exemples de tes vrais commentaires</label>
+      <textarea id="examples" rows="9" placeholder="Colle 10 à 20 commentaires que tu as écrits, séparés par une ligne vide.
+
+Exemple :
+Trop fier de toi frérot 🔥 continue comme ça !
+
+Merci pour le partage, c'est exactement ce que je disais à l'équipe la semaine dernière 👌"></textarea>
+      <p class="hint">C'est le plus important : plus tes exemples sont variés, plus les propositions te ressembleront.</p>
+
+      <button type="button" id="analyze" class="ghost">Analyser mon style automatiquement</button>
+      <span id="analyzeResult" class="status"></span>
+
+      <label for="notes">Description de ton style</label>
+      <textarea id="notes" rows="6" placeholder="Ex. : je tutoie tout le monde, phrases courtes, 1 emoji max à la fin, je dis souvent « top » et « franchement », jamais de hashtags."></textarea>
+    </section>
+
+    <section>
+      <h2>3. Préférences</h2>
+      <div class="grid">
+        <div>
+          <label for="language">Langue des commentaires</label>
+          <select id="language">
+            <option value="auto">Même langue que la publication</option>
+            <option value="fr">Toujours en français</option>
+            <option value="en">Toujours en anglais</option>
+          </select>
+        </div>
+        <div>
+          <label for="count">Nombre de propositions</label>
+          <select id="count">
+            <option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option>
+          </select>
+        </div>
+      </div>
+      <label class="check"><input type="checkbox" id="showButtons"> Afficher le bouton ✨ sur chaque publication</label>
+    </section>
+
+    <section class="howto">
+      <h2>Comment l'utiliser</h2>
+      <ul>
+        <li>Clique sur le <b>✨</b> en haut à droite d'une publication Facebook ou LinkedIn.</li>
+        <li>Ou sélectionne un texte, puis <b>clic droit → Proposer un commentaire</b> (fonctionne sur tous les sites).</li>
+        <li>Ou survole une publication et appuie sur <b>Alt+Maj+C</b>.</li>
+        <li>Choisis une proposition, modifie-la si besoin, clique <b>Insérer</b>, puis publie toi-même.</li>
+      </ul>
+    </section>
+
+    <div class="bar">
+      <button type="button" id="save">Enregistrer</button>
+      <span id="saved" class="status"></span>
+    </div>
+  </main>
+  <script src="providers.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

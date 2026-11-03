@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "Comment Me",
+  "short_name": "Comment Me",
+  "version": "0.1.0",
+  "description": "Lis une publication Facebook ou LinkedIn et te propose des commentaires dans ton propre style. Rien n'est publié sans toi.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "Proposer un commentaire",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_page": "options.html",
+  "permissions": ["storage", "contextMenus", "activeTab", "scripting"],
+  "host_permissions": [
+    "https://generativelanguage.googleapis.com/*",
+    "https://api.groq.com/*",
+    "https://openrouter.ai/*",
+    "https://api.mistral.ai/*",
+    "https://api.openai.com/*",
+    "https://api.anthropic.com/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "optional_host_permissions": ["https://*/*", "http://*/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://*.facebook.com/*", "https://*.linkedin.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "commands": {
+    "suggest-comment": {
+      "suggested_key": { "default": "Alt+Shift+C" },
+      "description": "Proposer un commentaire pour la publication survolée ou le texte sélectionné"
+    }
+  }
+}
