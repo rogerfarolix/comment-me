@@ -8,14 +8,17 @@ Tu utilises **ta propre clé API** : aucun serveur intermédiaire, aucun abonnem
 
 ## Fonctionnalités
 
-- Bouton ✨ dans la zone de commentaire : la publication (et le commentaire auquel tu réponds) est lue automatiquement, sans copier-coller
-- Bouton ✨ sur chaque publication Facebook et LinkedIn
-- Reconnaît quand c'est toi qui es tagué
-- Clic droit sur un texte sélectionné → « Proposer un commentaire » (fonctionne sur **tous les sites**)
-- Raccourci clavier **Alt+Maj+C** sur la publication survolée
-- Plusieurs propositions avec des tons au choix : court, chaleureux, pro, drôle, remerciement, félicitations, question
-- Imitation de ton style à partir de tes vrais commentaires, avec analyse automatique du style
-- Bouton « Insérer » qui remplit la zone de commentaire. Tu n'as plus qu'à publier.
+- **Propositions prêtes à l'avance** : clique dans une zone de commentaire, l'IA commence à rédiger tout de suite. Le ✨ devient vert quand c'est prêt.
+- **Affichage mot à mot** : le texte apparaît pendant qu'il s'écrit.
+- **Lecture automatique** de la publication et du commentaire auquel tu réponds, sans copier-coller (clique sur « Voir plus » si besoin).
+- **Reconnaît quand c'est toi qui es tagué.**
+- **Mode Notifications** : sur ta page de notifications, le bouton « ✨ Répondre aux tags » prépare une réponse pour chaque mention.
+- **Lecture des images** des publications (avec Gemini, OpenAI, Claude ou un modèle « vision »).
+- **Apprentissage de ton style** à partir de tes exemples, d'une analyse automatique et des commentaires que tu publies vraiment.
+- Tons au choix : court, chaleureux, pro, drôle, merci, bravo, question.
+- Clic droit sur un texte sélectionné → « Proposer un commentaire » (fonctionne sur **tous les sites**).
+- Raccourci **Alt+Maj+C**.
+- Bouton « Insérer » qui remplit la zone de commentaire. **C'est toi qui publies.**
 
 ## Fournisseurs d'IA
 
@@ -46,6 +49,24 @@ Compatible avec **Chrome, Edge, Brave, Opera, Vivaldi** et tous les navigateurs 
 4. Clique sur **Charger l'extension non empaquetée** et choisis ce dossier.
 5. La page de réglages s'ouvre : choisis ton IA, colle ta clé et ajoute des exemples de tes commentaires.
 
+### Firefox (128 ou plus récent)
+
+1. Ouvre `about:debugging#/runtime/this-firefox`.
+2. Clique sur **Charger un module complémentaire temporaire** et choisis le fichier `manifest.json`.
+3. Dans `about:addons` → Comment Me → **Permissions**, autorise l'accès aux sites.
+
+Pour une installation permanente, il faudra passer par la version publiée sur addons.mozilla.org.
+
+## Pour les développeurs
+
+```bash
+npm run lint     # vérification Mozilla (web-ext)
+npm run build    # crée dist/comment_me-x.y.z.zip, à envoyer au Chrome Web Store, à Edge Add-ons et à Firefox Add-ons
+npm run firefox  # lance Firefox avec l'extension
+```
+
+La fiche boutique et la justification des permissions se trouvent dans `store/LISTING.md`, et la politique de confidentialité dans `PRIVACY.md`.
+
 ## Utiliser Ollama (100 % local)
 
 Ollama refuse par défaut les requêtes venant d'une extension. Lance-le avec :
@@ -60,7 +81,8 @@ OLLAMA_ORIGINS="chrome-extension://*" ollama serve
 ## Confidentialité
 
 - Ta clé API et tes réglages restent dans `chrome.storage.local`, sur ton ordinateur.
-- Le texte d'une publication n'est envoyé à l'IA choisie **que lorsque tu demandes** une proposition.
+- Le texte (et les images) d'une publication ne sont envoyés à l'IA choisie que lorsque tu demandes une proposition, ou quand tu cliques dans une zone de commentaire si « Préparer à l'avance » est activé.
+- Voir [PRIVACY.md](PRIVACY.md).
 - Aucune télémétrie, aucun serveur tiers.
 
 ## Structure

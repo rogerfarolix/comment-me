@@ -82,7 +82,10 @@ const CM_DEFAULTS = {
   v: 2,
   styleNotes: "",
   styleExamples: "",
-  showButtons: true
+  showButtons: true,
+  prefetch: true,
+  readImages: true,
+  learnStyle: true
 };
 
 async function cmGetSettings() {

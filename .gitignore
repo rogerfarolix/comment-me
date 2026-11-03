@@ -1,5 +1,7 @@
 node_modules/
+dist/
 *.zip
 *.crx
 *.pem
+*.xpi
 .DS_Store

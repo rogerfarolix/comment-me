@@ -1,0 +1,15 @@
+{
+  "name": "comment-me",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Extension navigateur : propose des commentaires Facebook/LinkedIn dans ton style.",
+  "license": "MIT",
+  "scripts": {
+    "lint": "npx web-ext lint",
+    "build": "npx web-ext build --overwrite-dest -a dist",
+    "firefox": "npx web-ext run"
+  },
+  "webExt": {
+    "ignoreFiles": ["dist", "store", "*.md", "package.json", "package-lock.json", "LICENSE"]
+  }
+}

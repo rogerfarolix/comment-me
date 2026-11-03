@@ -29,6 +29,9 @@ function readForm() {
   s.styleNotes = $("notes").value;
   s.myName = $("myName").value.trim();
   s.showButtons = $("showButtons").checked;
+  s.prefetch = $("prefetch").checked;
+  s.readImages = $("readImages").checked;
+  s.learnStyle = $("learnStyle").checked;
 }
 
 function status(id, text, ok) {
@@ -75,6 +78,14 @@ async function init() {
   $("notes").value = s.styleNotes;
   $("myName").value = s.myName;
   $("showButtons").checked = s.showButtons;
+  $("prefetch").checked = s.prefetch;
+  $("readImages").checked = s.readImages;
+  $("learnStyle").checked = s.learnStyle;
+  showLearned();
+  $("clearLearned").addEventListener("click", async () => {
+    await chrome.storage.local.remove("cm_learned");
+    showLearned();
+  });
   fillProvider();
 
   $("provider").addEventListener("change", () => {
@@ -114,6 +125,14 @@ async function init() {
     $("notes").value = r.notes;
     status("analyzeResult", "Style analysé ✓ Relis et ajuste, puis enregistre.", true);
   });
+}
+
+async function showLearned() {
+  const { cm_learned = [] } = await chrome.storage.local.get("cm_learned");
+  $("learnedInfo").textContent = cm_learned.length
+    ? `${cm_learned.length} commentaire(s) appris. Derniers : « ${cm_learned.slice(0, 3).map((x) => x.text.slice(0, 60)).join(" » · « ")} »`
+    : "Aucun commentaire appris pour l'instant.";
+  $("clearLearned").hidden = !cm_learned.length;
 }
 
 init();

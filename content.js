@@ -34,12 +34,100 @@
 
   let lastEditor = null;
   let hoveredPost = null;
-  let settings = { showButtons: true };
+  let settings = { showButtons: true, prefetch: true, learnStyle: true };
 
   chrome.storage.local.get("cm_settings", ({ cm_settings }) => {
     settings = { ...settings, ...(cm_settings || {}) };
-    if (site && settings.showButtons) startObserver();
+    if (site) startObserver();
   });
+  chrome.storage.onChanged.addListener((ch) => {
+    if (ch.cm_settings) settings = { ...settings, ...ch.cm_settings.newValue };
+  });
+
+  // ---------- Génération (en flux, avec cache pour la préparation à l'avance) ----------
+
+  const jobs = new Map();
+
+  function jobKey(req) {
+    return [req.post?.trim(), req.comment, req.intent || "auto", req.extra || ""].join("|");
+  }
+
+  function startJob(req, force = false) {
+    const key = jobKey(req);
+    const cached = jobs.get(key);
+    if (cached && !force) return cached;
+
+    const job = { key, suggestions: [], done: false, error: null, listeners: new Set() };
+    jobs.set(key, job);
+    if (jobs.size > 30) jobs.delete(jobs.keys().next().value);
+    const emit = () => job.listeners.forEach((f) => f(job));
+    const fail = (msg) => {
+      job.error = msg;
+      job.done = true;
+      jobs.delete(key);
+      emit();
+    };
+
+    let port;
+    try {
+      port = chrome.runtime.connect({ name: "cm-stream" });
+    } catch {
+      fail("L'extension a été mise à jour : recharge la page (F5).");
+      return job;
+    }
+    port.onMessage.addListener((m) => {
+      if (m.type === "error") return fail(m.error), port.disconnect();
+      job.suggestions = m.suggestions;
+      if (m.type === "done") {
+        job.done = true;
+        port.disconnect();
+      }
+      emit();
+    });
+    port.onDisconnect.addListener(() => !job.done && fail("Connexion interrompue. Réessaie."));
+    port.postMessage({ platform: PLATFORM, ...req });
+    return job;
+  }
+
+  function jobDone(job) {
+    return new Promise((resolve) => {
+      if (job.done) return resolve(job);
+      const f = (j) => j.done && (job.listeners.delete(f), resolve(j));
+      job.listeners.add(f);
+    });
+  }
+
+  function reqFrom(ctx, intent = "auto", extra = "") {
+    const { post = "", author = "", comment = "", commentAuthor = "", images = [], source } = ctx;
+    return { post: post.trim(), author, comment, commentAuthor, images, intent, extra, source };
+  }
+
+  // ---------- Apprentissage : on retient les commentaires que tu publies vraiment ----------
+
+  function captureSend(ed) {
+    if (!settings.learnStyle) return;
+    const text = (ed.value ?? ed.innerText ?? "").trim();
+    if (!text) return;
+    // Publié = la zone a été vidée (ou retirée) juste après.
+    setTimeout(() => {
+      const now = document.contains(ed) ? (ed.value ?? ed.innerText ?? "").trim() : "";
+      if (!now) {
+        try {
+          chrome.runtime.sendMessage({ type: "cm-learn", text, platform: PLATFORM });
+        } catch {}
+      }
+    }, 1200);
+  }
+
+  if (site) {
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey && isEditor(e.target) && !e.target.closest("#comment-me-root")) captureSend(e.target);
+    }, true);
+    document.addEventListener("click", (e) => {
+      const b = e.target.closest?.('button, [role="button"]');
+      if (b && b !== fab && lastEditor && document.contains(lastEditor) && !b.closest("#comment-me-root")) captureSend(lastEditor);
+    }, true);
+  }
 
   // ---------- Bouton ✨ dans la zone de commentaire ----------
 
@@ -71,6 +159,32 @@
     fab.style.display = "block";
   }
 
+  function fabReady(ready) {
+    fab.style.boxShadow = ready
+      ? "0 0 0 3px #22c55e, 0 2px 8px rgba(34,197,94,.5)"
+      : "0 2px 8px rgba(79,70,229,.45)";
+    fab.title = ready
+      ? "Comment Me : propositions prêtes !"
+      : "Comment Me : proposer un commentaire (Alt+Maj+C)";
+  }
+
+  let prefetchTimer = null;
+  function prefetch(ed) {
+    clearTimeout(prefetchTimer);
+    fabReady(false);
+    if (!settings.prefetch) return;
+    // Petit délai : on ne dépense pas de quota pour un simple clic de passage.
+    prefetchTimer = setTimeout(() => {
+      if (document.activeElement !== ed) return;
+      const ctx = contextFromEditor(ed);
+      if (ctx.post.length < 20) return;
+      const job = startJob(reqFrom(ctx));
+      const f = (j) => j.done && lastEditor === ed && fabReady(!j.error);
+      f(job);
+      job.listeners.add(f);
+    }, 700);
+  }
+
   if (site) {
     document.addEventListener("focusin", (e) => {
       const t = e.target;
@@ -78,6 +192,7 @@
       lastEditor = t;
       if (!fab.isConnected) document.documentElement.appendChild(fab);
       placeFab();
+      prefetch(t);
     }, true);
     document.addEventListener("focusout", () => setTimeout(() => {
       if (!isEditor(document.activeElement)) fab.style.display = "none";
@@ -162,6 +277,19 @@
     return (precise.length > 30 ? precise : cleanText(el, skip)).slice(0, 4000);
   }
 
+  // Grandes images de la publication (pas les avatars ni les images des commentaires).
+  function imagesOf(el) {
+    if (!el) return [];
+    return [...el.querySelectorAll("img")]
+      .filter((i) => {
+        const r = i.getBoundingClientRect();
+        return i.naturalWidth >= 200 && r.width >= 150 && r.height >= 100 &&
+          /^https:/.test(i.currentSrc || i.src) && !(site && i.closest(site.comment));
+      })
+      .slice(0, 2)
+      .map((i) => i.currentSrc || i.src);
+  }
+
   // Contexte à partir de la zone de commentaire où l'utilisateur écrit.
   function contextFromEditor(ed) {
     const ctx = { post: "", author: "", comment: "", commentAuthor: "", el: null };
@@ -173,6 +301,7 @@
     ctx.el = postEl;
     ctx.post = readBlock(postEl, ed);
     ctx.author = authorOf(postEl);
+    ctx.images = imagesOf(postEl);
     if (commentEl && commentEl !== postEl) {
       ctx.comment = cleanText(commentEl, ed).slice(0, 1500);
       ctx.commentAuthor = authorOf(commentEl);
@@ -195,7 +324,7 @@
   }
 
   function contextFromPost(postEl) {
-    return { post: readBlock(postEl), author: authorOf(postEl), comment: "", commentAuthor: "", el: postEl };
+    return { post: readBlock(postEl), author: authorOf(postEl), images: imagesOf(postEl), comment: "", commentAuthor: "", el: postEl };
   }
 
   // ---------- Bouton ✨ sur chaque publication ----------
@@ -204,7 +333,8 @@
     let pending = false;
     const scan = () => {
       pending = false;
-      document.querySelectorAll(site.post).forEach(addButton);
+      if (settings.showButtons) document.querySelectorAll(site.post).forEach(addButton);
+      toggleNotifButton();
     };
     new MutationObserver(() => {
       if (!pending) {
@@ -238,6 +368,77 @@
       openPanel(contextFromPost(post));
     });
     post.appendChild(b);
+  }
+
+  // ---------- Mode notifications : répondre à tous les tags d'un coup ----------
+
+  const TAG_RX = /mentionn|identifi|tagu|parlé de vous|vous a cité|a répondu|a commenté|vous a répondu|mentioned|tagged|replied|commented on|reacted to your comment/i;
+
+  const notifBtn = document.createElement("button");
+  notifBtn.type = "button";
+  notifBtn.textContent = "✨ Répondre aux tags";
+  Object.assign(notifBtn.style, {
+    position: "fixed", left: "20px", bottom: "20px", zIndex: "2147483646",
+    padding: "10px 16px", border: "0", borderRadius: "999px", cursor: "pointer",
+    background: "linear-gradient(135deg,#7c3aed,#4f46e5)", color: "#fff",
+    font: "600 14px system-ui, sans-serif", boxShadow: "0 4px 14px rgba(79,70,229,.45)"
+  });
+  notifBtn.addEventListener("click", openNotifPanel);
+
+  function toggleNotifButton() {
+    const on = /\/notifications/.test(location.pathname);
+    if (on && !notifBtn.isConnected) document.documentElement.appendChild(notifBtn);
+    if (!on && notifBtn.isConnected) notifBtn.remove();
+  }
+
+  function collectNotifs() {
+    const scope = document.querySelector('main, [role="main"]') || document.body;
+    const items = [];
+    const seen = new Set();
+    scope.querySelectorAll("a[href]").forEach((a) => {
+      const box = a.closest('article, li, [role="row"], [role="listitem"], [role="gridcell"]') || a;
+      const text = cleanText(box);
+      if (!TAG_RX.test(text) || text.length < 15) return;
+      if (seen.has(a.href) || seen.has(text)) return;
+      seen.add(a.href);
+      seen.add(text);
+      items.push({ href: a.href, text: text.slice(0, 800) });
+    });
+    return items.slice(0, 10);
+  }
+
+  async function openNotifPanel() {
+    closePanel();
+    const items = collectNotifs();
+    const root = makeShell(`
+      <div class="note" style="text-align:left">${items.length
+        ? `${items.length} notification(s) où l'on te sollicite. Les propositions se préparent une par une.`
+        : "Aucune mention ou réponse trouvée sur cette page. Fais défiler pour charger plus de notifications, puis réessaie."}</div>
+      <div class="list"></div>`);
+    const list = root.querySelector(".list");
+    list.style.cssText = "display:flex;flex-direction:column;gap:14px";
+
+    const detaches = [];
+    panel.cleanup = () => detaches.forEach((d) => d());
+
+    for (const it of items) {
+      const box = document.createElement("div");
+      box.innerHTML = `<div class="reply" style="max-height:none">${escapeHTML(it.text.slice(0, 220))}</div><div class="out" style="margin-top:6px"></div>`;
+      list.appendChild(box);
+      it.out = box.querySelector(".out");
+    }
+    // Une par une, pour respecter les limites des offres gratuites.
+    for (const it of items) {
+      if (!panel) return;
+      const job = startJob({ post: it.text, source: "notification", intent: "auto" });
+      detaches.push(renderJob(it.out, job, {
+        actions: [
+          ["Copier", false, async (t, b) => (await copy(t), flash(b, "Copié ✓"))],
+          ["Copier et ouvrir ↗", true, async (t) => (await copy(t), window.open(it.href, "_blank"))]
+        ]
+      }));
+      await jobDone(job);
+    }
   }
 
   // ---------- Insertion ----------
@@ -354,21 +555,37 @@
     ["remerciement", "Merci"], ["félicitations", "Bravo"], ["qui pose une question", "Question"]
   ];
 
-  function openPanel(ctx) {
-    closePanel();
-    const { post = "", author = "", comment = "", commentAuthor = "" } = ctx;
+  function makeShell(bodyHTML) {
     const hostEl = document.createElement("div");
     hostEl.id = "comment-me-root";
     const root = hostEl.attachShadow({ mode: "open" });
-    const firstLine = post.split("\n").find((l) => l.length > 15 && l !== author) || post.split("\n")[0] || "";
-    const summary = post ? `${author ? author + " : " : ""}${firstLine.slice(0, 70)}` : "";
     root.innerHTML = `
       <style>${CSS}</style>
       <div class="wrap" role="dialog" aria-label="Comment Me">
         <header><b>✨ Comment Me</b>
           <button class="opt" title="Réglages">⚙</button>
           <button class="x" title="Fermer (Échap)">✕</button></header>
-        <div class="body">
+        <div class="body">${bodyHTML}</div>
+      </div>`;
+    document.documentElement.appendChild(hostEl);
+    root.querySelector(".x").addEventListener("click", closePanel);
+    root.querySelector(".opt").addEventListener("click", () => chrome.runtime.sendMessage({ type: "cm-open-options" }));
+    root.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closePanel();
+      e.stopPropagation(); // évite les raccourcis du site pendant la saisie
+    });
+    const onKey = (e) => e.key === "Escape" && closePanel();
+    document.addEventListener("keydown", onKey);
+    panel = { hostEl, onKey, cleanup: null };
+    return root;
+  }
+
+  function openPanel(ctx) {
+    closePanel();
+    const { post = "", author = "", comment = "", commentAuthor = "" } = ctx;
+    const firstLine = post.split("\n").find((l) => l.length > 15 && l !== author) || post.split("\n")[0] || "";
+    const summary = post ? `${author ? author + " : " : ""}${firstLine.slice(0, 70)}` : "";
+    const root = makeShell(`
           ${comment ? `<div class="reply">↪ Réponse à ${escapeHTML(commentAuthor || "un commentaire")} : ${escapeHTML(comment.slice(0, 200))}</div>` : ""}
           <details ${post ? "" : "open"}>
             <summary>${post ? "📄 " + escapeHTML(summary) : "📄 Texte de la publication"}</summary>
@@ -378,15 +595,11 @@
           <input class="extra" placeholder="Consigne en plus (optionnel), puis Entrée">
           <button class="go">Proposer des commentaires</button>
           <div class="out"></div>
-          <div class="note">Rien n'est publié automatiquement : c'est toi qui publies.</div>
-        </div>
-      </div>`;
-    document.documentElement.appendChild(hostEl);
+          <div class="note">Rien n'est publié automatiquement : c'est toi qui publies.</div>`);
 
     const $ = (s) => root.querySelector(s);
     $(".post").value = post;
     let intent = "auto";
-    let runId = 0;
 
     root.querySelectorAll(".chip").forEach((c) =>
       c.addEventListener("click", () => {
@@ -396,17 +609,12 @@
         if ($(".post").value.trim()) run();
       })
     );
-    $(".x").addEventListener("click", closePanel);
-    $(".opt").addEventListener("click", () => chrome.runtime.sendMessage({ type: "cm-open-options" }));
     $(".extra").addEventListener("keydown", (e) => e.key === "Enter" && run());
-    $(".go").addEventListener("click", run);
-    root.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closePanel();
-      e.stopPropagation(); // évite les raccourcis du site pendant la saisie
-    });
+    $(".go").addEventListener("click", () => run(generated));
+    let generated = false;
+    let detach = null;
 
-    async function run() {
-      const id = ++runId;
+    function run(force = false) {
       const go = $(".go");
       const out = $(".out");
       const text = $(".post").value.trim();
@@ -415,60 +623,77 @@
         $("details").open = true;
         return;
       }
+      detach?.();
+      generated = true;
       go.disabled = true;
       go.textContent = "Rédaction…";
-      out.innerHTML = `<div class="skel"></div><div class="skel"></div>`;
-      let res;
-      try {
-        res = await chrome.runtime.sendMessage({
-          type: "cm-generate", platform: PLATFORM, post: text, author, comment, commentAuthor,
-          intent, extra: $(".extra").value.trim()
-        });
-      } catch {
-        res = { error: "L'extension a été mise à jour : recharge la page (F5)." };
-      }
-      if (id !== runId || !panel) return;
-      go.disabled = false;
-      go.textContent = "↻ Régénérer";
-      if (!res || res.error) {
-        out.innerHTML = `<div class="err">${escapeHTML(res?.error || "Erreur inconnue")}<br><a class="o2">Ouvrir les réglages</a></div>`;
-        out.querySelector(".o2").addEventListener("click", () => chrome.runtime.sendMessage({ type: "cm-open-options" }));
-        return;
-      }
-      out.innerHTML = "";
-      res.suggestions.forEach((s) => {
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `<textarea rows="3"></textarea>
-          <div class="row"><button class="cp">Copier</button><button class="main ins">Insérer</button></div>`;
-        const ta = card.querySelector("textarea");
-        ta.value = s;
-        card.querySelector(".cp").addEventListener("click", async (e) => {
-          await copy(ta.value);
-          flash(e.target, "Copié ✓");
-        });
-        card.querySelector(".ins").addEventListener("click", async (e) => {
-          const r = await insertComment(ta.value, ctx);
-          if (r === "copied") flash(e.target, "Copié : colle avec Ctrl+V", 2500);
-          else closePanel();
-        });
-        out.appendChild(card);
+      const job = startJob({ ...reqFrom(ctx, intent, $(".extra").value.trim()), post: text }, force);
+      detach = renderJob(out, job, {
+        actions: [
+          ["Copier", false, async (t, b) => (await copy(t), flash(b, "Copié ✓"))],
+          ["Insérer", true, async (t, b) => {
+            const r = await insertComment(t, ctx);
+            if (r === "copied") flash(b, "Copié : colle avec Ctrl+V", 2500);
+            else closePanel();
+          }]
+        ],
+        onDone: (j) => {
+          go.disabled = false;
+          go.textContent = j.error ? "Réessayer" : "↻ Régénérer";
+        }
       });
     }
 
-    function onKey(e) {
-      if (e.key === "Escape") closePanel();
-    }
-    document.addEventListener("keydown", onKey);
-    panel = { hostEl, onKey };
+    panel.cleanup = () => detach?.();
 
     if (post) run();
     else $(".post").focus();
   }
 
+  // Affiche les propositions d'une génération, au fur et à mesure qu'elles arrivent.
+  function renderJob(out, job, { actions, onDone }) {
+    const cards = [];
+    const render = (j) => {
+      if (j.error) {
+        out.innerHTML = `<div class="err">${escapeHTML(j.error)}<br><a class="o2">Ouvrir les réglages</a></div>`;
+        out.querySelector(".o2").addEventListener("click", () => chrome.runtime.sendMessage({ type: "cm-open-options" }));
+        onDone?.(j);
+        return;
+      }
+      out.querySelector(".skel")?.remove();
+      j.suggestions.forEach((text, i) => {
+        if (!cards[i]) {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `<textarea rows="3"></textarea><div class="row"></div>`;
+          const ta = card.querySelector("textarea");
+          actions.forEach(([label, main, fn]) => {
+            const b = document.createElement("button");
+            b.textContent = label;
+            if (main) b.className = "main";
+            b.addEventListener("click", () => fn(ta.value, b));
+            card.querySelector(".row").appendChild(b);
+          });
+          out.appendChild(card);
+          cards[i] = ta;
+        }
+        // On n'écrase pas une proposition que l'utilisateur est en train de modifier.
+        if (cards[i].dataset.edited !== "1") cards[i].value = text;
+        cards[i].oninput = () => (cards[i].dataset.edited = "1");
+      });
+      if (!j.done) out.insertAdjacentHTML("beforeend", `<div class="skel"></div>`);
+      else onDone?.(j);
+    };
+    out.innerHTML = `<div class="skel"></div>`;
+    render(job);
+    job.listeners.add(render);
+    return () => job.listeners.delete(render);
+  }
+
   function closePanel() {
     if (!panel) return;
     document.removeEventListener("keydown", panel.onKey);
+    panel.cleanup?.();
     panel.hostEl.remove();
     panel = null;
   }
