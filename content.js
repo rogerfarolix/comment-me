@@ -13,11 +13,11 @@
   // si aucun ne correspond, on remonte dans la page jusqu'à trouver assez de texte.
   const SITES = {
     linkedin: {
-      post: '[data-urn*="urn:li:activity"], [data-id*="urn:li:activity"], .feed-shared-update-v2, .scaffold-finite-scroll__content > div > div, main article',
+      post: '[role="listitem"][componentkey^="update-card"], [data-urn*="urn:li:activity"], [data-id*="urn:li:activity"], .feed-shared-update-v2, .scaffold-finite-scroll__content > div > div, main article',
       comment: 'article.comments-comment-entity, article[data-id*="comment"], .comments-comment-item, article.comments-comment-item',
       text: [".update-components-text", ".feed-shared-inline-show-more-text", ".feed-shared-text", ".comments-comment-item__main-content", ".comments-comment-entity__content"],
       author: [".update-components-actor__title span[aria-hidden='true']", ".update-components-actor__name", ".comments-comment-meta__description-title", ".comments-comment-meta__actor span[aria-hidden='true']"],
-      commentBtn: ["button[aria-label*='omment']"]
+      commentBtn: ["button[aria-label='Comment']", "button[aria-label='Commenter']", "button[aria-label*='omment']"]
     },
     facebook: {
       post: '[aria-posinset], [data-pagelet^="FeedUnit"], [role="dialog"] [role="article"]:not([aria-label]), div[role="article"]:not([aria-label*="omment"])',
@@ -30,18 +30,20 @@
   const site = SITES[PLATFORM];
 
   // Lignes d'interface à retirer du texte lu (boutons, compteurs, dates…).
-  const NOISE = /^(j['’]aime|like|réagir|react|commenter|comment|partager|share|répondre|reply|envoyer|send|republier|repost|suivre|follow|\+ suivre|se connecter|connect|voir (plus|moins|la traduction|les \d+ réponses?|plus de commentaires)|see (more|less|translation)|…\s*(plus|more)|modifié|edited|auteur|author|\d+[\s ]*(j|h|min|sem|s|m|d|w|an|ans|mo|y|yr)s?\.?|·|•|\d[\d\s ,.k]*(j['’]aime|réactions?|commentaires?|partages?|comments?|reactions?|reposts?|shares?|likes?)?|\d+e?|1er|2e|3e\+?|plus pertinents|most relevant|tous les commentaires|all comments)$/i;
+  const NOISE = /^(feed post|publication du fil|show translation|voir la traduction|• ?(1st|2nd|3rd\+?|1er|2e|3e\+?|you|vous)|j['’]aime|like|réagir|react|commenter|comment|partager|share|répondre|reply|envoyer|send|republier|repost|suivre|follow|\+ suivre|se connecter|connect|voir (plus|moins|la traduction|les \d+ réponses?|plus de commentaires)|see (more|less|translation)|…\s*(plus|more)|modifié|edited|auteur|author|\d+[\s ]*(j|h|min|sem|s|m|d|w|an|ans|mo|y|yr)s?\.?|·|•|\d[\d\s ,.k]*(j['’]aime|réactions?|commentaires?|partages?|comments?|reactions?|reposts?|shares?|likes?)?|\d+e?|1er|2e|3e\+?|plus pertinents|most relevant|tous les commentaires|all comments)$/i;
 
   let lastEditor = null;
   let hoveredPost = null;
-  let settings = { showButtons: true, prefetch: true, learnStyle: true };
+  let settings = { showButtons: true, prefetch: false, learnStyle: true };
+  // Avant la v3, la préparation à l'avance était activée par défaut.
+  const migrate = (s) => ((s?.v || 0) < 3 ? { ...s, prefetch: false } : s);
 
   chrome.storage.local.get("cm_settings", ({ cm_settings }) => {
-    settings = { ...settings, ...(cm_settings || {}) };
+    settings = { ...settings, ...migrate(cm_settings || {}) };
     if (site) startObserver();
   });
   chrome.storage.onChanged.addListener((ch) => {
-    if (ch.cm_settings) settings = { ...settings, ...ch.cm_settings.newValue };
+    if (ch.cm_settings) settings = { ...settings, ...migrate(ch.cm_settings.newValue) };
   });
 
   // ---------- Génération (en flux, avec cache pour la préparation à l'avance) ----------
@@ -292,6 +294,9 @@
       const t = a?.innerText?.trim().split("\n")[0];
       if (t && t.length < 80) return t;
     }
+    if (el.matches('[role="listitem"]')) {
+      return (el.innerText || "").split("\n").map((l) => l.trim()).find((l) => l.length > 1 && !NOISE.test(l))?.slice(0, 80) || "";
+    }
     return "";
   }
 
@@ -305,8 +310,26 @@
     if (btns.length) await new Promise((r) => setTimeout(r, 350));
   }
 
+  // Le texte placé avant la barre d'actions, donc sans les commentaires.
+  function textBeforeActions(el) {
+    const bar = el.querySelector('button[aria-label^="Reaction button"], button[aria-label="Comment"], button[aria-label="Commenter"]');
+    if (!bar) return "";
+    const range = document.createRange();
+    range.setStartBefore(el.firstChild);
+    range.setEndBefore(bar);
+    const box = document.createElement("div");
+    box.style.cssText = "position:fixed;left:-9999px;top:0;width:600px";
+    box.appendChild(range.cloneContents());
+    document.documentElement.appendChild(box);
+    const text = cleanText(box);
+    box.remove();
+    return text;
+  }
+
   function readBlock(el, skip) {
     if (!el) return "";
+    const before = textBeforeActions(el);
+    if (before.length > 30) return before.slice(0, 4000);
     // Pour le bloc principal, on préfère les zones de texte connues, sinon tout le bloc nettoyé.
     const precise = site ? ownText(el, site.text.slice(0, -1)) : "";
     return (precise.length > 30 ? precise : cleanText(el, skip)).slice(0, 4000);
@@ -393,7 +416,7 @@
     b.title = "Comment Me : proposer un commentaire";
     b.setAttribute("aria-label", "Proposer un commentaire");
     Object.assign(b.style, {
-      position: "absolute", top: "8px", right: "88px", zIndex: "5",
+      position: "absolute", top: "8px", right: "132px", zIndex: "5",
       width: "28px", height: "28px", borderRadius: "50%", border: "1px solid #d0d7de",
       background: "#fff", color: "#4f46e5", cursor: "pointer", display: "grid", placeItems: "center",
       boxShadow: "0 1px 3px rgba(0,0,0,.15)", opacity: ".8", padding: "0"
@@ -500,10 +523,10 @@
   async function insertComment(text, { target, el }) {
     let ed = target && document.contains(target) ? target : findEditor(el);
     if (!ed && el && site) {
-      const btn = el.querySelector(site.commentBtn.join(","));
+      const btn = site.commentBtn.map((s) => el.querySelector(s)).find(Boolean);
       if (btn) {
         btn.click();
-        ed = await waitFor(() => findEditor(el), 2500);
+        ed = await waitFor(() => findEditor(el), 15000);
       }
     }
     if (!ed && lastEditor && document.contains(lastEditor)) ed = lastEditor;
@@ -600,7 +623,8 @@
   const INTENTS = [
     ["auto", "Auto"], ["court et direct", "Court"], ["chaleureux", "Chaleureux"],
     ["professionnel", "Pro"], ["avec une pointe d'humour", "Drôle"],
-    ["remerciement", "Merci"], ["félicitations", "Bravo"], ["qui pose une question", "Question"]
+    ["remerciement", "Merci"], ["félicitations", "Bravo"], ["qui pose une question", "Question"],
+    ["critique constructive : signale une erreur, une imprécision ou une amélioration concrète", "Critique"]
   ];
 
   function makeShell(bodyHTML) {

@@ -8,7 +8,7 @@ Tu utilises **ta propre clé API** : aucun serveur intermédiaire, aucun abonnem
 
 ## Fonctionnalités
 
-- **Propositions prêtes à l'avance** : clique dans une zone de commentaire, l'IA commence à rédiger tout de suite. Le ✨ devient vert quand c'est prêt.
+- **Propositions prêtes à l'avance** (option, désactivée par défaut) : clique dans une zone de commentaire, l'IA commence à rédiger tout de suite. Le ✨ devient vert quand c'est prêt.
 - **Affichage mot à mot** : le texte apparaît pendant qu'il s'écrit.
 - **Lecture automatique** de la publication et du commentaire auquel tu réponds, sans copier-coller (clique sur « Voir plus » si besoin).
 - **Reconnaît quand c'est toi qui es tagué.**
@@ -16,7 +16,7 @@ Tu utilises **ta propre clé API** : aucun serveur intermédiaire, aucun abonnem
 - **📝 Résumer** une longue publication en 10 secondes : l'essentiel, les points clés et ce qu'on attend de toi.
 - **Lecture des images** des publications (avec Gemini, OpenAI, Claude ou un modèle « vision »).
 - **Apprentissage de ton style** à partir de tes exemples, d'une analyse automatique et des commentaires que tu publies vraiment.
-- Tons au choix : court, chaleureux, pro, drôle, merci, bravo, question.
+- Tons au choix : court, chaleureux, pro, drôle, merci, bravo, question, critique constructive.
 - Clic droit sur un texte sélectionné → « Proposer un commentaire » (fonctionne sur **tous les sites**).
 - Raccourci **Alt+Maj+C**.
 - Bouton « Insérer » qui remplit la zone de commentaire. **C'est toi qui publies.**
@@ -57,7 +57,7 @@ Compatible avec **Chrome, Edge, Brave, Opera, Vivaldi** et tous les navigateurs 
 
 **Mise à jour :** télécharge le nouveau zip, remplace le contenu du dossier, puis clique sur ↻ dans la page des extensions.
 
-### Firefox (128 ou plus récent)
+### Firefox (128 ou plus récent, en test)
 
 1. Ouvre `about:debugging#/runtime/this-firefox`.
 2. Clique sur **Charger un module complémentaire temporaire** et choisis le fichier `manifest.json`.

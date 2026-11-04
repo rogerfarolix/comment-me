@@ -9,7 +9,7 @@ Comment Me est une extension open source. Elle ne possède **aucun serveur** et 
 | Donnée | Où elle reste | Quand elle sort de ton ordinateur |
 |---|---|---|
 | Clé API, réglages, exemples de style | `storage.local` du navigateur | Jamais. La clé est envoyée seulement au fournisseur d'IA que tu as choisi, pour s'authentifier. |
-| Texte et images d'une publication | Mémoire de la page | Seulement quand tu demandes une proposition, ou quand tu cliques dans une zone de commentaire si l'option « Préparer à l'avance » est activée. Ils sont alors envoyés au fournisseur d'IA que tu as choisi. |
+| Texte et images d'une publication | Mémoire de la page | Seulement quand tu demandes une proposition, ou quand tu cliques dans une zone de commentaire si tu as activé l'option « Préparer à l'avance » (désactivée par défaut). Ils sont alors envoyés au fournisseur d'IA que tu as choisi. |
 | Commentaires que tu publies (si « Apprendre de mes commentaires » est activé) | `storage.local` (40 au maximum) | Ils sont inclus dans les demandes envoyées à ton fournisseur d'IA. Tu peux les effacer dans les réglages. |
 
 ## Tiers

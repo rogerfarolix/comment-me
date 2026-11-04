@@ -79,11 +79,11 @@ const CM_DEFAULTS = {
   language: "auto",
   count: 2,
   myName: "",
-  v: 2,
+  v: 3,
   styleNotes: "",
   styleExamples: "",
   showButtons: true,
-  prefetch: true,
+  prefetch: false,
   readImages: true,
   learnStyle: true
 };
@@ -93,5 +93,7 @@ async function cmGetSettings() {
   const saved = cm_settings || {};
   // v2 : 2 propositions par défaut au lieu de 3.
   if (saved.count && !saved.v) saved.count = 2;
-  return { ...CM_DEFAULTS, ...saved, v: 2 };
+  // v3 : préparation à l'avance désactivée par défaut (elle envoie le texte dès le clic).
+  if ((saved.v || 0) < 3) saved.prefetch = false;
+  return { ...CM_DEFAULTS, ...saved, v: 3 };
 }
